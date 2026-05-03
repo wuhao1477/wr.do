@@ -1,11 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { ipAddress } from "@vercel/functions";
-import { auth } from "auth";
-import { NextAuthRequest } from "next-auth/lib";
 
 import { siteConfig } from "./config/site";
 import { extractRealIP, getGeolocation, getUserAgent } from "./lib/geo";
-import { extractHost } from "./lib/utils";
+import { extractHost } from "./lib/string-utils";
 
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
@@ -66,11 +64,10 @@ function isBusinessDomain(hostname: string): boolean {
 
 // 处理业务域名的根路径请求 - 重定向到门户域名
 function handleBusinessDomainRedirect(hostname: string): NextResponse {
-  const portalUrl = `https://${PORTAL_DOMAIN}?redirect=${hostname}`;
-  return NextResponse.redirect(portalUrl, 302);
+  return NextResponse.redirect(`https://${PORTAL_DOMAIN}?redirect=${hostname}`, 302);
 }
 
-async function handleShortUrl(req: NextAuthRequest) {
+async function handleShortUrl(req: NextRequest) {
   const url = new URL(req.url);
   const pathname = url.pathname;
 
@@ -106,13 +103,11 @@ async function handleShortUrl(req: NextAuthRequest) {
   return await processShortUrl(req, slug, url);
 }
 
-async function processShortUrl(req: NextAuthRequest, slug: string, url: URL) {
+async function processShortUrl(req: NextRequest, slug: string, url: URL) {
   const headers = req.headers;
   const ip = isVercel ? ipAddress(req) : extractRealIP(headers);
   const ua = getUserAgent(req);
-
   const geo = await getGeolocation(req, ip || "::1");
-
   const password = url.searchParams.get("password") || "";
 
   const trackingData = {
@@ -134,8 +129,6 @@ async function processShortUrl(req: NextAuthRequest, slug: string, url: URL) {
     isBot: ua.isBot,
     password,
   };
-
-  // console.log("Tracking data:", trackingData, siteConfig.url);
 
   const res = await fetch(`${siteConfig.url}/api/s`, {
     method: "POST",
@@ -159,15 +152,6 @@ async function processShortUrl(req: NextAuthRequest, slug: string, url: URL) {
   }
 
   if (target in redirectMap) {
-    if (
-      ["PasswordRequired[0004]", "IncorrectPassword[0005]"].includes(target)
-    ) {
-      return NextResponse.redirect(
-        `${siteConfig.url}${redirectMap[target]}${slug}`,
-        302,
-      );
-    }
-
     return NextResponse.redirect(
       `${siteConfig.url}${redirectMap[target]}${slug}`,
       302,
@@ -182,7 +166,7 @@ function extractSlug(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export default auth(async (req) => {
+export default async function middleware(req: NextRequest) {
   try {
     const { pathname } = new URL(req.nextUrl);
     const hostname = req.headers.get("host") || "";
@@ -194,4 +178,4 @@ export default auth(async (req) => {
     console.error("Middleware error:", error);
     return NextResponse.redirect(siteConfig.url, 302);
   }
-});
+}

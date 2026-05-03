@@ -6,6 +6,8 @@ const withNextIntl = createNextIntlPlugin();
 
 import("./env.mjs");
 
+const disablePWA = process.env.DISABLE_PWA === "true";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -52,7 +54,28 @@ const nextConfig = {
     ],
   },
   experimental: {
-    serverComponentsExternalPackages: ["@prisma/client"],
+    outputFileTracingExcludes: {
+      "next-server": [
+        "node_modules/@swc/core*/**/*",
+        "node_modules/@esbuild/**/*",
+        "node_modules/esbuild/**/*",
+        "node_modules/webpack/**/*",
+        "node_modules/terser/**/*",
+        "node_modules/terser-webpack-plugin/**/*",
+        "node_modules/sass/**/*",
+      ],
+    },
+    serverComponentsExternalPackages: [
+      "@auth/prisma-adapter",
+      "@aws-sdk/client-s3",
+      "@aws-sdk/s3-request-presigner",
+      "@getbrevo/brevo",
+      "@prisma/client",
+      "cheerio",
+      "lucide-static",
+      "turndown",
+      "ua-parser-js",
+    ],
     // serverActions: {
     //   allowedOrigins: ["localhost:3000", process.env.NEXT_PUBLIC_APP_URL],
     // },
@@ -88,7 +111,7 @@ const nextConfig = {
 
 const withPWA = nextPWA({
   dest: "public",
-  disable: false,
+  disable: disablePWA,
 });
 
 export default withContentlayer(withPWA(withNextIntl(nextConfig)));

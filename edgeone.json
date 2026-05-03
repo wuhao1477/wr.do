@@ -1,0 +1,4 @@
+{
+  "nodeVersion": "20.18.0",
+  "buildCommand": "DISABLE_PWA=true NEXT_TELEMETRY_DISABLED=1 pnpm run build"
+}
