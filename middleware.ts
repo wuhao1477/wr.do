@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { ipAddress } from "@vercel/functions";
 import { auth } from "auth";
+import { NextAuthRequest } from "next-auth/lib";
 import { siteConfig } from "./config/site";
 import { extractRealIP, getGeolocation, getUserAgent } from "./lib/geo";
 import { extractHost } from "./lib/string-utils";
@@ -68,7 +69,7 @@ function handleBusinessDomainRedirect(hostname: string): NextResponse {
   return NextResponse.redirect(portalUrl, 302);
 }
 
-async function handleShortUrl(req: NextRequest) {
+async function handleShortUrl(req: NextAuthRequest) {
   const url = new URL(req.url);
   const pathname = url.pathname;
 
@@ -104,7 +105,7 @@ async function handleShortUrl(req: NextRequest) {
   return await processShortUrl(req, slug, url);
 }
 
-async function processShortUrl(req: NextRequest, slug: string, url: URL) {
+async function processShortUrl(req: NextAuthRequest, slug: string, url: URL) {
   const headers = req.headers;
   const ip = isVercel ? ipAddress(req) : extractRealIP(headers);
   const ua = getUserAgent(req);

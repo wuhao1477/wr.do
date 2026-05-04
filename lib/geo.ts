@@ -1,5 +1,6 @@
-import { type NextRequest, userAgent } from "next/server";
+import { userAgent } from "next/server";
 import { Geo, geolocation, ipAddress } from "@vercel/functions";
+import { NextAuthRequest } from "next-auth/lib";
 import UAParser from "ua-parser-js";
 
 interface GeoLocation extends Geo {
@@ -9,7 +10,7 @@ interface GeoLocation extends Geo {
 const isVercel = process.env.VERCEL;
 
 export async function getGeolocation(
-  req: NextRequest,
+  req: NextAuthRequest,
   ip: string,
 ): Promise<GeoLocation | null> {
   // console.log("[Runtime Env]", isVercel ? "Vercel" : "Other");
@@ -21,7 +22,7 @@ export async function getGeolocation(
   }
 }
 
-export function getUserAgent(req: NextRequest) {
+export function getUserAgent(req: NextAuthRequest) {
   if (isVercel) {
     return userAgent(req);
   } else {
