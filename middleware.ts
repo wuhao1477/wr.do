@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ipAddress } from "@vercel/functions";
-
+import { auth } from "auth";
 import { siteConfig } from "./config/site";
 import { extractRealIP, getGeolocation, getUserAgent } from "./lib/geo";
 import { extractHost } from "./lib/string-utils";
@@ -178,7 +178,7 @@ function extractSlug(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export default async function (req: NextRequest) {
+export default auth(async (req) => {
   try {
     const { pathname } = new URL(req.nextUrl);
     const hostname = req.headers.get("host") || "";
@@ -190,4 +190,4 @@ export default async function (req: NextRequest) {
     console.error("Middleware error:", error);
     return NextResponse.redirect(siteConfig.url, 302);
   }
-}
+});
