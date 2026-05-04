@@ -64,7 +64,8 @@ function isBusinessDomain(hostname: string): boolean {
 
 // 处理业务域名的根路径请求 - 重定向到门户域名
 function handleBusinessDomainRedirect(hostname: string): NextResponse {
-  return NextResponse.redirect(`https://${PORTAL_DOMAIN}?redirect=${hostname}`, 302);
+  const portalUrl = `https://${PORTAL_DOMAIN}?redirect=${hostname}`;
+  return NextResponse.redirect(portalUrl, 302);
 }
 
 async function handleShortUrl(req: NextRequest) {
@@ -130,6 +131,8 @@ async function processShortUrl(req: NextRequest, slug: string, url: URL) {
     password,
   };
 
+  // console.log("Tracking data:", trackingData, siteConfig.url);
+
   const res = await fetch(`${siteConfig.url}/api/s`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -152,6 +155,15 @@ async function processShortUrl(req: NextRequest, slug: string, url: URL) {
   }
 
   if (target in redirectMap) {
+    if (
+      ["PasswordRequired[0004]", "IncorrectPassword[0005]"].includes(target)
+    ) {
+      return NextResponse.redirect(
+        `${siteConfig.url}${redirectMap[target]}${slug}`,
+        302,
+      );
+    }
+
     return NextResponse.redirect(
       `${siteConfig.url}${redirectMap[target]}${slug}`,
       302,
@@ -166,7 +178,7 @@ function extractSlug(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export default async function middleware(req: NextRequest) {
+export default async function (req: NextRequest) {
   try {
     const { pathname } = new URL(req.nextUrl);
     const hostname = req.headers.get("host") || "";
